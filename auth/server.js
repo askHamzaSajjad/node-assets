@@ -5,14 +5,12 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const morgan = require('morgan');
-const http = require('http');
 
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
 const connectDB = require('./config/db.js');
 const routes = require('./routes'); // centralized routes
-const initSocket = require('./sockets/chatSocket');
 
 // Express app
 const app = express();
@@ -49,7 +47,7 @@ const swaggerDefinition = {
 
 const swaggerOptions = {
   swaggerDefinition,
-  apis: ['./routes/authRoute.js'], 
+  apis: ['./routes/authRoute.js'],
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -66,22 +64,9 @@ app.use('/api/v1', routes);
 // Connect to MongoDB
 connectDB();
 
-// Setup HTTP server & socket.io
-const server = http.createServer(app);
-const { Server } = require('socket.io');
-const io = new Server(server, {
-  cors: {
-    origin: '*', 
-    methods: ['GET', 'POST'],
-  },
-});
-
-// Initialize socket events
-initSocket(io);
-
 // Start server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📚 Swagger docs available at http://localhost:${PORT}/api-docs`);
 });
