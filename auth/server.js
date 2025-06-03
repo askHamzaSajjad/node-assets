@@ -24,9 +24,9 @@ app.use(morgan('dev'));
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
-    title: 'FitBizZ API',
+    title: '{Project Name} API',
     version: '1.0.0',
-    description: 'API documentation for FitBizZ auth module',
+    description: 'API documentation for {Project Name} auth module',
   },
   servers: [
     {
@@ -56,7 +56,7 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Test Route
-app.get('/', (req, res) => res.send('Hello FitBizZ!'));
+app.get('/', (req, res) => res.send('Hello {Project Name}!'));
 
 // Versioned API Routing
 app.use('/api/v1', routes);
