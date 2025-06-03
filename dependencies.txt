@@ -1,0 +1,4 @@
+jsonwebtoken
+bcrypt
+dotenv
+express-validator
