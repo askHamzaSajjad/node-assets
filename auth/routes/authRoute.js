@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const authController = require('../controllers/authController');
-const authenticate = require('../middlewares/authMiddleware');
+const authController = require("../controllers/authController");
+const authenticate = require("../middlewares/authMiddleware");
 
 /**
  * @swagger
@@ -32,9 +32,9 @@ const authenticate = require('../middlewares/authMiddleware');
  *               password:
  *                 type: string
  *                 example: strongPassword123
- *               role:
+ *              role:
  *                 type: string
- *                 example: mother
+ *                 example: user,admin etc.
  *     responses:
  *       201:
  *         description: Signup successful, OTP sent to email
@@ -43,7 +43,7 @@ const authenticate = require('../middlewares/authMiddleware');
  *       409:
  *         description: User already exists
  */
-router.post('/signup', authController.signup);
+router.post("/signup", authController.signup);
 
 /**
  * @swagger
@@ -72,7 +72,7 @@ router.post('/signup', authController.signup);
  *       400:
  *         description: Invalid or expired OTP or already verified
  */
-router.post('/verify-otp-signup', authController.verifyOtpForSignup);
+router.post("/verify-otp-signup", authController.verifyOtpForSignup);
 
 /**
  * @swagger
@@ -98,7 +98,7 @@ router.post('/verify-otp-signup', authController.verifyOtpForSignup);
  *       400:
  *         description: Invalid request (e.g., user already verified)
  */
-router.post('/resend-signup-otp', authController.resendSignupOtp);
+router.post("/resend-signup-otp", authController.resendSignupOtp);
 
 /**
  * @swagger
@@ -129,7 +129,7 @@ router.post('/resend-signup-otp', authController.resendSignupOtp);
  *       403:
  *         description: Invalid or unverified user
  */
-router.post('/signin', authController.signin);
+router.post("/signin", authController.signin);
 
 /**
  * @swagger
@@ -153,7 +153,7 @@ router.post('/signin', authController.signin);
  *       200:
  *         description: OTP sent for password reset or user not found (to avoid user enumeration)
  */
-router.post('/forgot-password', authController.forgotPassword);
+router.post("/forgot-password", authController.forgotPassword);
 
 /**
  * @swagger
@@ -180,7 +180,10 @@ router.post('/forgot-password', authController.forgotPassword);
  *       400:
  *         description: Invalid or expired OTP
  */
-router.post('/verify-otp-forgot-password', authController.verifyOtpForForgotPassword);
+router.post(
+  "/verify-otp-forgot-password",
+  authController.verifyOtpForForgotPassword
+);
 
 /**
  * @swagger
@@ -208,7 +211,7 @@ router.post('/verify-otp-forgot-password', authController.verifyOtpForForgotPass
  *       403:
  *         description: Reset not allowed (OTP not verified)
  */
-router.post('/reset-password', authController.resetPassword);
+router.post("/reset-password", authController.resetPassword);
 
 /**
  * @swagger
@@ -233,7 +236,7 @@ router.post('/reset-password', authController.resetPassword);
  *       403:
  *         description: Invalid or expired refresh token
  */
-router.post('/refresh-token', authController.refreshToken);
+router.post("/refresh-token", authController.refreshToken);
 
 /**
  * @swagger
@@ -256,7 +259,7 @@ router.post('/refresh-token', authController.refreshToken);
  *       200:
  *         description: Logged out successfully
  */
-router.post('/logout', authController.logout);
+router.post("/logout", authController.logout);
 
 /**
  * @swagger
@@ -282,7 +285,7 @@ router.post('/logout', authController.logout);
  *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *               role:
  *                 type: string
- *                 example: mother
+ *                 example: user,admin etc.
  *     responses:
  *       200:
  *         description: Login successful, returns tokens and user data
@@ -291,7 +294,7 @@ router.post('/logout', authController.logout);
  *       500:
  *         description: Social login failed
  */
-router.post('/social-login', authController.socialLogin);
+router.post("/social-login", authController.socialLogin);
 
 /**
  * @swagger
@@ -319,7 +322,11 @@ router.post('/social-login', authController.socialLogin);
  *       404:
  *         description: User not found
  */
-router.post('/delete-account', authenticate, authController.requestDeleteAccountOtp);
+router.post(
+  "/delete-account",
+  authenticate,
+  authController.requestDeleteAccountOtp
+);
 
 /**
  * @swagger
@@ -348,6 +355,10 @@ router.post('/delete-account', authenticate, authController.requestDeleteAccount
  *       400:
  *         description: Invalid or expired OTP
  */
-router.post('/verify-delete-account', authenticate, authController.verifyDeleteAccountOtp);
+router.post(
+  "/verify-delete-account",
+  authenticate,
+  authController.verifyDeleteAccountOtp
+);
 
 module.exports = router;
