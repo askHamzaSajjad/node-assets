@@ -361,4 +361,33 @@ router.post(
   authController.verifyDeleteAccountOtp
 );
 
+/**
+ * @swagger
+ * /auth/create-password:
+ *   post:
+ *     summary: Set password after successful OTP verification
+ *     tags: [Auth]
+ *     requestBody:
+ *       description: Email and new password after OTP verification
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, newPassword]
+ *             properties:
+ *               email:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 example: newStrongPassword123
+ *     responses:
+ *       200:
+ *         description: Password set successfully
+ *       403:
+ *         description: OTP not verified or user not found
+ */
+router.post("/create-password", authController.createPassword);
+
+
 module.exports = router;

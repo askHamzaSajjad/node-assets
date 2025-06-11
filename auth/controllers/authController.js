@@ -136,7 +136,6 @@ exports.signin = async (req, res) => {
   }
 };
 
-
 // Generate OTP for password reset
 exports.forgotPassword = async (req, res) => {
   try {
@@ -336,5 +335,40 @@ exports.socialLogin = async (req, res) => {
   } catch (error) {
     console.error("Social login error:", error);
     res.status(500).json({ message: "Social login failed." });
+  }
+};
+
+// Set password after OTP verification (for signup flow)
+exports.createPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user || !user.isVerified || user.password) {
+      return res
+        .status(403)
+        .json({ message: "Invalid request. Either user not found, not verified, or password already set." });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = await generateRefreshToken(user);
+
+    res.status(200).json({
+      message: "Password set successfully.",
+      accessToken,
+      refreshToken,
+      user: {
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        provider: user.provider
+      }
+    });
+  } catch (error) {
+    console.error("Create password error:", error);
+    res.status(500).json({ message: "Server error while setting password." });
   }
 };
