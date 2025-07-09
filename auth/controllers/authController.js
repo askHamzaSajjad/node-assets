@@ -1,12 +1,10 @@
 const bcrypt = require("bcrypt");
 const { OAuth2Client } = require("google-auth-library");
 const appleSigninAuth = require("apple-signin-auth");
-
 const User = require("../models/userModel");
 const RefreshToken = require("../models/refreshTokenModel");
 const Profile = require("../models/profileModel");
 const Invitation = require("../models/invitationModel"); // Import the model
-
 const { generateOtp } = require("../utils/generateOtp");
 const { sendOtpEmail } = require("../services/emailService");
 const {
@@ -14,36 +12,10 @@ const {
   generateRefreshToken,
 } = require("../utils/tokenService");
 
+
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Register new user and send verification OTP
-// exports.signup = async (req, res) => {
-//   try {
-//     const { email, role = "" } = req.body;
-//     if (!email) return res.status(400).json({ message: "Email is required." });
-
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser)
-//       return res.status(409).json({ message: "User already exists." });
-
-//     const { otp, expiry } = generateOtp();
-
-//     const user = await User.create({
-//       email,
-//       role,
-//       canCreatePassword: true,
-//       otp,
-//       otpExpiry: expiry,
-//     });
-
-//     await sendOtpEmail(email, otp, "signup");
-//     res.status(201).json({ message: "Signup successful, OTP sent to email." });
-//   } catch (error) {
-//     console.error("Signup error:", error);
-//     res.status(500).json({ message: "Server error during signup." });
-//   }
-// };
-
+// Register a new user
 exports.signup = async (req, res) => {
   try {
     const { email, role = "", referralToken,deviceToken } = req.body;
@@ -65,7 +37,7 @@ exports.signup = async (req, res) => {
       deviceToken:deviceToken,
     });
 
-    // Handle invitation tracking if referralToken is provided
+
     if (referralToken) {
       const invitation = await Invitation.findOne({ token: referralToken });
 
@@ -74,9 +46,6 @@ exports.signup = async (req, res) => {
         invitation.acceptedAt = new Date();
         invitation.acceptedUserId = user._id;
         await invitation.save();
-
-        // TODO: reward inviter (e.g., give credits)
-        // await rewardUser(invitation.invitedBy);
       }
     }
 
@@ -162,7 +131,6 @@ exports.signin = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log("=================Password issue===============");
       return res.status(401).json({ message: "Incorrect password." });
     }
 
@@ -199,7 +167,6 @@ exports.signin = async (req, res) => {
     res.status(500).json({ message: "Server error during signin." });
   }
 };
-
 
 // Generate OTP for password reset
 exports.forgotPassword = async (req, res) => {
@@ -356,6 +323,7 @@ exports.verifyDeleteAccountOtp = async (req, res) => {
   res.status(200).json({ message: "Account deleted successfully." });
 };
 
+// social login via google and apple oauth
 exports.socialLogin = async (req, res) => {
   const { provider, token, platform = "android", role = "user", deviceToken } = req.body;
 
@@ -486,7 +454,6 @@ exports.socialLogin = async (req, res) => {
     return res.status(500).json({ message: "Social login failed." });
   }
 };
-
 
 // Set password after OTP verification (for signup flow)
 exports.createPassword = async (req, res) => {

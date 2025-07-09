@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
-const authenticate = require("../middlewares/authMiddleware");
+const {authenticate} = require("../middlewares/authMiddleware");
 
 /**
  * @swagger
@@ -17,29 +17,30 @@ const authenticate = require("../middlewares/authMiddleware");
  *     summary: Register a new user and send verification OTP
  *     tags: [Auth]
  *     requestBody:
- *       description: Signup details
+ *       description: Email to begin signup (optionally include referral token)
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [email, password]
+ *             required: [email]
  *             properties:
  *               email:
  *                 type: string
  *                 format: email
  *                 example: user@example.com
- *               password:
+ *               role:
  *                 type: string
- *                 example: strongPassword123
- *              role:
+ *                 example: user
+ *               referralToken:
  *                 type: string
- *                 example: user,admin etc.
+ *                 description: Optional referral token from invitation link
+ *                 example: d44f8e3e-0ed9-4f77-bb7e-abc123456789
  *     responses:
  *       201:
- *         description: Signup successful, OTP sent to email
+ *         description: OTP sent to email
  *       400:
- *         description: Email and password required
+ *         description: Invalid email
  *       409:
  *         description: User already exists
  */
@@ -68,11 +69,39 @@ router.post("/signup", authController.signup);
  *                 example: "123456"
  *     responses:
  *       200:
- *         description: Signup verified successfully, returns access and refresh tokens and user data
+ *         description: Signup verified successfully
  *       400:
  *         description: Invalid or expired OTP or already verified
  */
 router.post("/verify-otp-signup", authController.verifyOtpForSignup);
+
+/**
+ * @swagger
+ * /auth/create-password:
+ *   post:
+ *     summary: Set password after successful OTP verification
+ *     tags: [Auth]
+ *     requestBody:
+ *       description: Email and new password after OTP verification
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, newPassword]
+ *             properties:
+ *               email:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 example: newStrongPassword123
+ *     responses:
+ *       200:
+ *         description: Password set successfully
+ *       403:
+ *         description: OTP not verified or user not found
+ */
+router.post("/create-password", authController.createPassword);
 
 /**
  * @swagger
@@ -96,7 +125,7 @@ router.post("/verify-otp-signup", authController.verifyOtpForSignup);
  *       200:
  *         description: OTP resent successfully
  *       400:
- *         description: Invalid request (e.g., user already verified)
+ *         description: Invalid request (e.g., already verified)
  */
 router.post("/resend-signup-otp", authController.resendSignupOtp);
 
@@ -123,7 +152,7 @@ router.post("/resend-signup-otp", authController.resendSignupOtp);
  *                 example: strongPassword123
  *     responses:
  *       200:
- *         description: Login successful, returns access and refresh tokens and user data
+ *         description: Login successful
  *       401:
  *         description: Incorrect password
  *       403:
@@ -151,7 +180,7 @@ router.post("/signin", authController.signin);
  *                 example: user@example.com
  *     responses:
  *       200:
- *         description: OTP sent for password reset or user not found (to avoid user enumeration)
+ *         description: OTP sent for password reset
  */
 router.post("/forgot-password", authController.forgotPassword);
 
@@ -176,7 +205,7 @@ router.post("/forgot-password", authController.forgotPassword);
  *                 type: string
  *     responses:
  *       200:
- *         description: OTP verified, user may reset password
+ *         description: OTP verified
  *       400:
  *         description: Invalid or expired OTP
  */
@@ -209,7 +238,7 @@ router.post(
  *       200:
  *         description: Password reset successfully
  *       403:
- *         description: Reset not allowed (OTP not verified)
+ *         description: Reset not allowed
  */
 router.post("/reset-password", authController.resetPassword);
 
@@ -220,7 +249,7 @@ router.post("/reset-password", authController.resetPassword);
  *     summary: Refresh access token using refresh token
  *     tags: [Auth]
  *     requestBody:
- *       description: Refresh token data
+ *       description: Refresh token
  *       required: true
  *       content:
  *         application/json:
@@ -232,7 +261,7 @@ router.post("/reset-password", authController.resetPassword);
  *                 type: string
  *     responses:
  *       200:
- *         description: New access and refresh tokens issued
+ *         description: New tokens issued
  *       403:
  *         description: Invalid or expired refresh token
  */
@@ -265,16 +294,19 @@ router.post("/logout", authController.logout);
  * @swagger
  * /auth/social-login:
  *   post:
- *     summary: Social login or register user via OAuth provider (Google or Apple)
+ *     summary: Social login or register via Google or Apple
  *     tags: [Auth]
  *     requestBody:
- *       description: Social login details
  *       required: true
+ *       description: Token and provider information from frontend OAuth SDK
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [provider, token]
+ *             required:
+ *               - provider
+ *               - token
+ *               - platform
  *             properties:
  *               provider:
  *                 type: string
@@ -282,25 +314,53 @@ router.post("/logout", authController.logout);
  *                 example: google
  *               token:
  *                 type: string
- *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *                 description: ID token received from Google/Apple OAuth SDK
+ *               platform:
+ *                 type: string
+ *                 description: Platform from which the login is initiated (e.g., android, ios, web)
+ *                 example: android
  *               role:
  *                 type: string
- *                 example: user,admin etc.
+ *                 description: Optional role if a new user is created
+ *                 example: user
  *     responses:
  *       200:
- *         description: Login successful, returns tokens and user data
+ *         description: Social login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     email:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     provider:
+ *                       type: string
+ *                     platform:
+ *                       type: string
  *       400:
- *         description: Unsupported provider
+ *         description: Missing or unsupported provider or token
  *       500:
- *         description: Social login failed
+ *         description: Social login failed due to server error
  */
 router.post("/social-login", authController.socialLogin);
+
 
 /**
  * @swagger
  * /auth/delete-account:
  *   post:
- *     summary: Request OTP to confirm account deletion (requires authentication)
+ *     summary: Request OTP to confirm account deletion
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
@@ -332,12 +392,12 @@ router.post(
  * @swagger
  * /auth/verify-delete-account:
  *   post:
- *     summary: Verify OTP and delete user account (requires authentication)
+ *     summary: Verify OTP and delete user account
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
- *       description: OTP verification for account deletion
+ *       description: OTP for account deletion
  *       required: true
  *       content:
  *         application/json:
@@ -351,7 +411,7 @@ router.post(
  *                 type: string
  *     responses:
  *       200:
- *         description: Account deleted successfully
+ *         description: Account deleted
  *       400:
  *         description: Invalid or expired OTP
  */
@@ -360,34 +420,5 @@ router.post(
   authenticate,
   authController.verifyDeleteAccountOtp
 );
-
-/**
- * @swagger
- * /auth/create-password:
- *   post:
- *     summary: Set password after successful OTP verification
- *     tags: [Auth]
- *     requestBody:
- *       description: Email and new password after OTP verification
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [email, newPassword]
- *             properties:
- *               email:
- *                 type: string
- *               newPassword:
- *                 type: string
- *                 example: newStrongPassword123
- *     responses:
- *       200:
- *         description: Password set successfully
- *       403:
- *         description: OTP not verified or user not found
- */
-router.post("/create-password", authController.createPassword);
-
 
 module.exports = router;
